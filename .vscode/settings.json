@@ -1,5 +1,10 @@
 {
 	"files.associations": {
-		"netlink.h": "c"
+		"netlink.h": "c",
+		"fs.h": "c",
+		"init.h": "c",
+		"module.h": "c",
+		"cdev.h": "c",
+		"uaccess.h": "c"
 	}
 }
