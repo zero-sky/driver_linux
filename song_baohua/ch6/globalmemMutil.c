@@ -6,7 +6,7 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 
-#define GLOBALMEN_SIZE 0x1000
+#define GLOBALMEM_SIZE 0x1000
 #define MEM_CLEAR 0x1
 #define GLOBALMEM_MAJOR 230
 #define DEVICE_NUM 10   // 最多10个设备
@@ -17,8 +17,8 @@ module_param(globalmen_major, int, S_IRUGO);
 // 设备结构体，用于存储设备的私有信息
 struct globalmem_dev {
     struct cdev cdev;
-    unsigned char men[GLOBALMEN_SIZE];
-}
+    unsigned char mem[GLOBALMEM_SIZE];
+};
 
 struct globalmem_dev *globalmem_devp;
 
@@ -45,11 +45,11 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t size, 
     struct globalmem_dev *dev = filp->private_data; 
 
     // 数据可信判断
-    if(p >= GLOBALMEN_SIZE) {
+    if(p >= GLOBALMEM_SIZE) {
         return 0;
     }
-    if(count > GLOBALMEN_SIZE - p){
-        count = GLOBALMEN_SIZE - p;
+    if(count > GLOBALMEM_SIZE - p){
+        count = GLOBALMEM_SIZE - p;
     }
 
     // 内核空间的数据，这里是globalmem_devp指向内存的数据，复制给用户空间
@@ -66,7 +66,7 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t size, 
 }
 
 // 写函数
-static ssize_t globalmem_write(struct file *filp, char __user *buf, size_t size, loff_t *ppos)
+static ssize_t globalmem_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
 {
     unsigned long p = *ppos;
     unsigned int count = size;
@@ -74,11 +74,11 @@ static ssize_t globalmem_write(struct file *filp, char __user *buf, size_t size,
 
     struct globalmem_dev *dev = filp->private_data; 
 
-    if(p >= GLOBALMEN_SIZE) {
+    if(p >= GLOBALMEM_SIZE) {
         return 0;
     }
-    if(count > GLOBALMEN_SIZE - p){
-        count = GLOBALMEN_SIZE - p;
+    if(count > GLOBALMEM_SIZE - p){
+        count = GLOBALMEM_SIZE - p;
     }
 
     // 除了这里，其他地方可以说和读函数一模一样
@@ -115,7 +115,7 @@ static loff_t globalmem_llseek(struct file *filp, loff_t offset, int orig)
     
     // 从文件当前位置开始偏移
     case 1:
-        if((filp->f_pos + offset) > GLOBALMEN_SIZE) {
+        if((filp->f_pos + offset) > GLOBALMEM_SIZE) {
             ret = -EINVAL;
             break;  
         }
@@ -152,13 +152,12 @@ static long globalmem_ioctl(struct file *filp, unsigned int cmd, unsigned long a
 
 // 文件操作结构体
 static const struct file_operations globalmem_fops = {
-    .owner = THIS_MODULE;
-    .llseek = globalmem_llseek;
-    .read = globalmem_read;
-    .write = globalmem_write;
-    .unlocked_ioctl = golbalmem_ioctl;
-    .open = globalmem_open;
-    .release = globalmem_release;
+    .owner = THIS_MODULE,
+    .llseek = globalmem_llseek,
+    .read = globalmem_read,
+    .write = globalmem_write,
+    .unlocked_ioctl = globalmem_ioctl,
+    .open = globalmem_open,
 };
 
 
@@ -179,7 +178,7 @@ static void globalmem_setup_cdev(struct globalmem_dev *dev, int index)
 // 模块加载初始化函数
 static int __init globalmem_init(void)
 {
-    int ret;
+    int ret, i;
     dev_t devno = MKDEV(globalmen_major, 0);    // 生产一个次设备号为0的设备号
 
     // 如果存在主设备号，则注册该设备号的设备；否则就动态分配一个
@@ -196,13 +195,13 @@ static int __init globalmem_init(void)
     }
 
     // 申请一个空间用于存放设备的特定信息
-    globalmen_devp = kzalloc(sizeof(struct globalmem_dev) * DEVICE_NUM, GFP_KERNEL);
+    globalmem_devp = kzalloc(sizeof(struct globalmem_dev) * DEVICE_NUM, GFP_KERNEL);
     if(!globalmem_devp) {
         ret = -ENOMEM;
         goto fail_malloc;
     }
 
-    for(int i = 0; i < DEVICE_NUM; i++) {
+    for(i = 0; i < DEVICE_NUM; i++) {
         globalmem_setup_cdev(globalmem_devp + i,  i);
     }
     
@@ -217,7 +216,8 @@ module_init(globalmem_init);
 // 卸载函数
 static void __exit globalmem_exit(void)
 {
-    for(int i =0; i < DEVICE_NUM; i++) {
+    int i;
+    for(i =0; i < DEVICE_NUM; i++) {
         cdev_del(&globalmem_devp->cdev);
     }
     kfree(globalmem_devp);

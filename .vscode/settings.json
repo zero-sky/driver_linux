@@ -5,6 +5,7 @@
 		"init.h": "c",
 		"module.h": "c",
 		"cdev.h": "c",
-		"uaccess.h": "c"
+		"uaccess.h": "c",
+		"byteorder.h": "c"
 	}
 }
