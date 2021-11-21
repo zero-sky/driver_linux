@@ -7,6 +7,8 @@
 		"cdev.h": "c",
 		"uaccess.h": "c",
 		"byteorder.h": "c",
-		"little_endian.h": "c"
+		"little_endian.h": "c",
+		"poll.h": "c",
+		"libaio.h": "c"
 	}
 }

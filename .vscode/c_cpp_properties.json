@@ -5,7 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/src/linux-headers-5.4.0-89-generic/include",
-                "/usr/src/linux-headers-5.4.0-89-generic/arch/x86/include"
+                "/usr/src/linux-headers-5.4.0-89-generic/arch/x86/include",
+                "/home/zero/kernel/WSL2-Linux-Kernel/include",
+                "/home/zero/kernel/WSL2-Linux-Kernel/arch/x86/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
