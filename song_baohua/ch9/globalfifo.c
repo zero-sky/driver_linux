@@ -59,8 +59,8 @@ static ssize_t globalfifo_read(struct file *filp, char __user *buf, size_t size,
             goto out;
         }
 
-        __set_current_state(TASK_INTERRUNPTIBLE);
-        mutex_unlock(%dev->mutex);
+        __set_current_state(TASK_INTERRUPTIBLE);
+        mutex_unlock(&dev->mutex);
 
         schedule(); // 调度其他CPU，当前线程在此停止运行
 
@@ -87,9 +87,9 @@ static ssize_t globalfifo_read(struct file *filp, char __user *buf, size_t size,
         dev->current_len -= count;
         ret = count;
 
-        printk(KERN_INFO "read %u bytes, current_len:%d\n", count);
+        printk(KERN_INFO "read %u bytes, current_len:%d\n", count, dev->current_len);
 
-        wake_up_interruptible(&dev->w_ait); // 读完毕，唤醒写队列
+        wake_up_interruptible(&dev->w_wait); // 读完毕，唤醒写队列
     }
 out:
     mutex_unlock(&dev->mutex);
@@ -102,7 +102,7 @@ out2:
 // 写函数
 static ssize_t globalfifo_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
 {
-    unsigned long p = *ppos;
+    //unsigned long p = *ppos;
     unsigned int count = size;
     int ret = 0;
 
@@ -117,8 +117,8 @@ static ssize_t globalfifo_write(struct file *filp, const char __user *buf, size_
             goto out;
         }
 
-        __set_current_state(TASK_INTERRUNPTIBLE);
-        mutex_unlock(%dev->mutex);
+        __set_current_state(TASK_INTERRUPTIBLE);
+        mutex_unlock(&dev->mutex);
 
         schedule(); // 调度其他CPU，当前线程在此停止运行
 
@@ -149,7 +149,7 @@ static ssize_t globalfifo_write(struct file *filp, const char __user *buf, size_
         ret = count;
 
         printk(KERN_INFO "write %u bytes, current_len:%d\n", count, dev->current_len);
-        wake_up_interruptible(&dev->r_ait); 
+        wake_up_interruptible(&dev->r_wait); 
         // 发送信号，async_queue是指针，由async函数设置
         if(dev->async_queue) {
             kill_fasync(&dev->async_queue, SIGIO, POLL_IN);
@@ -269,6 +269,7 @@ static const struct file_operations globalfifo_fops = {
     .unlocked_ioctl = globalfifo_ioctl,
     .open = globalfifo_open,
     .poll = globalfifo_poll,
+    .release = globalfifo_release,
 };
 
 
