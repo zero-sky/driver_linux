@@ -6,6 +6,7 @@
 		"module.h": "c",
 		"cdev.h": "c",
 		"uaccess.h": "c",
-		"byteorder.h": "c"
+		"byteorder.h": "c",
+		"little_endian.h": "c"
 	}
 }
